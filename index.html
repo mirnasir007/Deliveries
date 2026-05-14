@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Parcel Dashboard</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 98%;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+            outline: none;
+        }
+        button {
+            padding: 12px 25px;
+            background-color: #ed1c24; 
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover { background-color: #c9161d; }
+        #loading {
+            text-align: center; color: #666; display: none; margin-bottom: 20px; font-weight: bold;
+        }
+        .error-msg {
+            color: red; text-align: center; font-weight: bold; margin-top: 20px;
+        }
+
+        /* Table Design */
+        .table-wrapper {
+            display: none;
+            overflow-x: auto; /* Mobile scroll fixing */
+        }
+        table {
+            width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;
+        }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #333; font-weight: bold; white-space: nowrap; }
+        tbody tr:hover { background-color: #f1f1f1; }
+        
+        .badge {
+            display: inline-block; padding: 4px 8px; border-radius: 4px; color: white; font-size: 12px; font-weight: bold; white-space: nowrap;
+        }
+        .bg-pathao { background-color: #28a745; }
+        .bg-bahok { background-color: #f7941d; }
+        .recipient-single-line { white-space: nowrap; }
+        
+        /* Popup link styles */
+        .status-link {
+            color: #007bff; text-decoration: none; font-weight: bold; cursor: pointer; display: inline-block;
+        }
+        .status-link:hover { text-decoration: underline; color: #0056b3; }
+        .click-hint { font-size: 11px; color: #888; font-weight: normal; }
+
+        /* Modal (Popup) CSS */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); 
+        }
+        .modal-content {
+            background-color: #fff; margin: 15% auto; padding: 25px; border-radius: 8px;
+            width: 90%; max-width: 350px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center; position: relative;
+        }
+        .close-btn {
+            color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;
+            position: absolute; right: 15px; top: 10px;
+        }
+        .close-btn:hover { color: #000; }
+        .rider-info { font-size: 16px; line-height: 1.8; color: #444; margin-top: 15px;}
+        .rider-phone-btn {
+            display: inline-block; margin-top: 10px; padding: 8px 20px; background-color: #28a745; 
+            color: white; text-decoration: none; border-radius: 4px; font-weight: bold;
+        }
+        .rider-phone-btn:hover { background-color: #218838; }
+
+        /* Mobile Responsiveness */
+        @media screen and (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            .input-group { flex-direction: column; }
+            input[type="text"] { border-radius: 4px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+            button { border-radius: 4px; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>All Deliveries Overview</h2>
+    
+    <div class="input-group">
+        <input type="text" id="trackingId" placeholder="Consignment ID, Order ID or Phone Number">
+        <button onclick="trackParcel()">Search</button>
+    </div>
+
+    <div id="loading">Searching across all merchants... Please wait.</div>
+    <div id="error" class="error-msg"></div>
+
+    <div class="table-wrapper" id="tableWrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Merchant</th>
+                    <th>Consignment ID</th>
+                    <th>Order ID</th>
+                    <th>Recipient Info</th>
+                    <th>Address</th>
+                    <th>Amount</th>
+                    <th>Order Status</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="riderModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h3 style="margin:0; color:#333; border-bottom:1px solid #eee; padding-bottom:10px;">🛵 Rider Details</h3>
+        <div class="rider-info">
+            <strong>Name:</strong> <span id="riderName"></span><br>
+            <strong>Phone:</strong> <span id="riderPhoneText"></span><br>
+            <a href="#" id="riderPhoneBtn" class="rider-phone-btn">📞 Call Rider</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe.toString()
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }
+
+    // Enter button press korle jeno auto search hoy
+    document.getElementById('trackingId').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            trackParcel();
+        }
+    });
+
+    // Modal Handle Korar functions
+    function showRiderModal(name, phone) {
+        document.getElementById('riderName').innerText = name || 'Not Found';
+        document.getElementById('riderPhoneText').innerText = phone || 'N/A';
+        
+        const callBtn = document.getElementById('riderPhoneBtn');
+        if (phone && phone !== 'N/A' && phone !== 'Check SMS') {
+            callBtn.href = `tel:${phone}`;
+            callBtn.style.display = 'inline-block';
+        } else {
+            callBtn.style.display = 'none';
+        }
+        
+        document.getElementById('riderModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('riderModal').style.display = 'none';
+    }
+
+    // Modal er baire click korle jeno auto close hoye jay
+    window.onclick = function(event) {
+        const modal = document.getElementById('riderModal');
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    // Main Track function
+    async function trackParcel() {
+        const idInput = document.getElementById('trackingId').value.trim();
+        const tableWrapper = document.getElementById('tableWrapper');
+        const tableBody = document.getElementById('tableBody');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+
+        tableWrapper.style.display = 'none';
+        errorDiv.innerText = '';
+        tableBody.innerHTML = '';
+        
+        if (!idInput) {
+            alert("Please enter a valid Tracking ID or Mobile Number.");
+            return;
+        }
+
+        loading.style.display = 'block';
+
+        try {
+            const safeIdInput = encodeURIComponent(idInput);
+            const response = await fetch(`https://all-deliveries-overview-backend.onrender.com/api/track/${safeIdInput}`);
+            const data = await response.json();
+
+            loading.style.display = 'none';
+
+            if (data.status === 'success') {
+                const orders = data.parcel_info;
+                
+                let rowsHtml = '';
+                orders.forEach(info => {
+                    const safeMerchant = escapeHtml(info.source_merchant);
+                    const badgeClass = info.source_merchant === 'Bahok Courier' ? 'bg-bahok' : 'bg-pathao';
+
+                    let statusHtml = `<strong>${escapeHtml(info.order_status || 'N/A')}</strong>`;
+                    
+                    if (info.order_status === 'Assigned For Delivery' || info.order_status === 'Rider Assigned') {
+                        const rName = info.rider_name ? escapeHtml(info.rider_name).replace(/'/g, "\\'") : 'N/A';
+                        const rPhone = info.rider_phone ? escapeHtml(info.rider_phone).replace(/'/g, "\\'") : 'N/A';
+                        
+                        statusHtml = `
+                            <a class="status-link" onclick="showRiderModal('${rName}', '${rPhone}')">
+                                ${escapeHtml(info.order_status)} <br><span class="click-hint">(Click for details)</span>
+                            </a>
+                        `;
+                    }
+
+                    rowsHtml += `
+                        <tr>
+                            <td><span class="badge ${badgeClass}">${safeMerchant}</span></td>
+                            <td>${escapeHtml(info.consignment_id || 'N/A')}</td>
+                            <td>${escapeHtml(info.merchant_order_id || 'N/A')}</td>
+                            <td class="recipient-single-line">
+                                <strong>${escapeHtml(info.recipient_name || 'N/A')}</strong> &nbsp;|&nbsp; 📞 ${escapeHtml(info.recipient_phone || 'N/A')}
+                            </td>
+                            <td>${escapeHtml(info.delivery_address || 'N/A')}</td>
+                            <td>৳${escapeHtml(info.amount_to_collect || '0')}</td>
+                            <td>${statusHtml}</td>
+                        </tr>
+                    `;
+                });
+
+                tableBody.innerHTML = rowsHtml;
+                tableWrapper.style.display = 'block';
+
+            } else {
+                errorDiv.innerText = data.message || "Parcel not found.";
+            }
+        } catch (error) {
+            loading.style.display = 'none';
+            errorDiv.innerText = "Connection error. Make sure your local server is running.";
+            console.error("Fetch Error:", error);
+        }
+    }
+</script>
+
+</body>
+</html>
