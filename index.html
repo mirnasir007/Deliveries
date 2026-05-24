@@ -141,6 +141,7 @@
                     <th>Address</th>
                     <th>Amount</th>
                     <th>Order Status</th>
+                    <th>Payment</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
@@ -273,6 +274,7 @@
                             <td>${escapeHtml(info.delivery_address || 'N/A')}</td>
                             <td>৳${escapeHtml(info.amount_to_collect || '0')}</td>
                             <td>${statusHtml}</td>
+                            <td><strong>${escapeHtml(info.payment_status || 'N/A')}</strong></td>
                         </tr>
                     `;
                 });
