@@ -162,6 +162,16 @@
     </div>
 </div>
 
+<div id="holdModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h3 style="margin:0; color:#dc3545; border-bottom:1px solid #eee; padding-bottom:10px;">🛑 Hold Reason</h3>
+        <div class="rider-info">
+            <strong>Reason:</strong> <span id="holdReasonText" style="color:#d9534f; font-weight:bold;"></span>
+        </div>
+    </div>
+</div>
+
 <script>
     function escapeHtml(unsafe) {
         if (!unsafe) return '';
@@ -196,15 +206,25 @@
         document.getElementById('riderModal').style.display = 'block';
     }
 
+    function showHoldModal(reason) {
+        document.getElementById('holdReasonText').innerText = reason || 'No exact reason provided by courier.';
+        document.getElementById('holdModal').style.display = 'block';
+    }
+
     function closeModal() {
         document.getElementById('riderModal').style.display = 'none';
+        document.getElementById('holdModal').style.display = 'none';
     }
 
     // Modal er baire click korle jeno auto close hoye jay
     window.onclick = function(event) {
-        const modal = document.getElementById('riderModal');
-        if (event.target == modal) {
-            modal.style.display = "none";
+        const riderModal = document.getElementById('riderModal');
+        const holdModal = document.getElementById('holdModal');
+        if (event.target == riderModal) {
+            riderModal.style.display = "none";
+        }
+        if (event.target == holdModal) {
+            holdModal.style.display = "none";
         }
     }
 
@@ -259,6 +279,14 @@
                         statusHtml = `
                             <a class="status-link" onclick="showRiderModal('${rName}', '${rPhone}')">
                                 ${escapeHtml(info.order_status)} <br><span class="click-hint">(Click for details)</span>
+                            </a>
+                        `;
+                    } else if (info.order_status && info.order_status.toLowerCase().includes('hold')) {
+                        const hReason = info.hold_reason ? escapeHtml(info.hold_reason).replace(/'/g, "\\'") : 'No exact reason provided';
+                        
+                        statusHtml = `
+                            <a class="status-link" style="color: #dc3545;" onclick="showHoldModal('${hReason}')">
+                                ${escapeHtml(info.order_status)} <br><span class="click-hint" style="color: #dc3545;">(Click for reason)</span>
                             </a>
                         `;
                     }
