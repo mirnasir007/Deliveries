@@ -183,6 +183,17 @@
              .replace(/'/g, "&#039;");
     }
 
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const day = String(d.getDate()).padStart(2, '0');
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const month = months[d.getMonth()];
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
     // Enter button press korle jeno auto search hoy
     document.getElementById('trackingId').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
@@ -291,9 +302,14 @@
                         `;
                     }
 
+                    const sendDateFormatted = formatDate(info.send_date);
+
                     rowsHtml += `
                         <tr>
-                            <td><span class="badge ${badgeClass}">${safeMerchant}</span></td>
+                            <td>
+                                ${sendDateFormatted ? `<div style="font-size: 11px; color: #555; margin-bottom: 3px; font-weight: bold; white-space: nowrap;">${escapeHtml(sendDateFormatted)}</div>` : ''}
+                                <span class="badge ${badgeClass}">${safeMerchant}</span>
+                            </td>
                             <td>${escapeHtml(info.consignment_id || 'N/A')}</td>
                             <td>${escapeHtml(info.merchant_order_id || 'N/A')}</td>
                             <td class="recipient-single-line">
