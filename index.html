@@ -279,7 +279,7 @@
                 let rowsHtml = '';
                 orders.forEach(info => {
                     const safeMerchant = escapeHtml(info.source_merchant);
-                    const badgeClass = info.source_merchant === 'Bahok Courier' ? 'bg-bahok' : 'bg-pathao';
+                    const badgeClass = (info.source_merchant === 'Bahok Courier' || info.source_merchant === 'Sumaiya Everyday') ? 'bg-bahok' : 'bg-pathao';
 
                     let statusHtml = `<strong>${escapeHtml(info.order_status || 'N/A')}</strong>`;
                     
